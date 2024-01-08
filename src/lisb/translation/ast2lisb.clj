@@ -1,6 +1,7 @@
 (ns lisb.translation.ast2lisb
   (:require [lisb.translation.lisb2ir :refer :all])
-  (:import (de.be4.classicalb.core.parser.node
+  (:import (de.be4.classicalb.core.parser.util Utils)
+           (de.be4.classicalb.core.parser.node
              Start
              AAbstractMachineParseUnit
              AMachineMachineVariant
@@ -342,7 +343,10 @@
 (defmethod ast->lisb AFileDefinitionDefinition [node]
   (lisbify 'file-definition (.getFilename node)))
 (defmethod ast->lisb TStringLiteral [node]
-  (.getText node))
+  (-> (.getText node)
+      ; assume SyntaxExtensionTranslator already did its thing
+      #_(Utils/removeSurroundingQuotes \")
+      #_(Utils/unescapeStringContents)))
 
 (defmethod ast->lisb AFreetypesMachineClause [node]
   (concat-last 'freetypes (.getFreetypes node)))
@@ -527,7 +531,7 @@
 ;;; strings
 
 (defmethod ast->lisb AStringExpression [node]
-  (.getText (.getContent node)))
+  (ast->lisb (.getContent node)))
 
 (defmethod ast->lisb AStringSetExpression [_]
   'string-set)

@@ -3,8 +3,9 @@
             [lisb.prob.animator :refer [state-space!]]
             [lisb.translation ast2lisb ir2ast lisb2ir data-conversion])
   (:import
-    (de.be4.classicalb.core.parser BParser)
-    (de.be4.classicalb.core.parser.analysis.transforming SyntaxExtensionTranslator)
+    (de.be4.classicalb.core.parser BParser Definitions)
+    (de.be4.classicalb.core.parser.analysis.checking DefinitionCollector)
+    (de.be4.classicalb.core.parser.analysis.transforming OpSubstitutions SyntaxExtensionTranslator)
     (de.be4.classicalb.core.parser.util PrettyPrinter)))
 
 (import-vars [lisb.translation.ast2lisb ast->lisb])
@@ -60,10 +61,13 @@
               bset-enum bmap-set defpred pred almost-flatten wrap bempty-machine])
 
 (defn ast->b [ast]
-  (let [ext-translator (SyntaxExtensionTranslator.)
+  (let [definitions (Definitions.)
         pprinter (PrettyPrinter.)]
-    #_(.apply ast ext-translator) ; this is required for if-pred, but breaks with strings
-    (.apply ast pprinter)
+    (doto ast
+      (.apply (DefinitionCollector. definitions))
+      (OpSubstitutions/transform definitions)
+      (.apply (SyntaxExtensionTranslator.)) ; this is required for if-pred, but breaks with strings
+      (.apply pprinter))
     (.getPrettyPrint pprinter)))
 
 (defn bfile->b

@@ -3,7 +3,8 @@
                                               seq-tags fn-tags rel-tags num-tags set-tags boolean-tags expr-tags
                                               pred-tags]])
   (:require [clojure.spec.alpha :as s])
-  (:import (de.be4.classicalb.core.parser.node Start
+  (:import (de.be4.classicalb.core.parser.util Utils)
+           (de.be4.classicalb.core.parser.node Start
                                                EOF
                                                AAbstractMachineParseUnit
                                                AMachineMachineVariant
@@ -1169,13 +1170,13 @@
     (set? ir) (set-expression (map ir->ast-node ir))
     ;(vector? ir) (ACoupleExpression. (map ir->ast-node ir))
     (keyword? ir) (AIdentifierExpression. [(TIdentifierLiteral. (name ir))])
-    (string? ir) (AStringExpression. (TStringLiteral. ir)) ;; hack-y thing to avoid renaming of rec-get parameters in preds
+    (string? ir) (AStringExpression. (TStringLiteral. (str \" (Utils/escapeStringContents ir) \")))
     (integer? ir) (AIntegerExpression. (TIntegerLiteral. (str ir)))
     (float? ir) (ARealExpression. (TRealLiteral. (str ir)))
     (true? ir) (ABooleanTrueExpression.)
     (false? ir) (ABooleanFalseExpression.)
     (nil? ir) nil
-    :otherwise (println :unhandled-literal ir)))
+    :else (throw (Exception. (str "unhandled literal: " ir)))))
 
 (defn ir->ast [ir]
   (let [top-ast-node (ir->ast-node ir)]
@@ -1190,7 +1191,7 @@
         (instance? PSubstitution top-ast-node) (ASubstitutionParseUnit. top-ast-node)
         (instance? PDefinition top-ast-node) (AParseUnitDefinitionParseUnit. top-ast-node)
         (instance? PMachineClause top-ast-node) (AMachineClauseParseUnit. top-ast-node)
-        :else (throw (Exception. (str "Unsupported top level ast node" top-ast-node))))
+        :else (throw (Exception. (str "Unsupported top level ast node: " top-ast-node))))
       (EOF.))))
 
 #_(s/check-asserts true)
